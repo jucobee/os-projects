@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include <fcntl.h>
@@ -15,34 +16,27 @@ int main(int argc, char *argv[]) {
 
   // see if the user passed in an argument
   // if argc == 1, no additional arguments passed besides the program name
-  // itself
   if (argc == 1) {
-    // it's already open
-    fd = STDIN_FILENO;
-    // STDIN_FILENO is the standard input file descriptor
+    return 0;
   } else {
-    fd = open(argv[1], O_RDONLY);
-    if (fd == -1) {
-      cerr << "could not open " << argv[1] << endl;
-      // this signifies an error
-      return 1;
+    for (int i = 1; i < argc; i++) {
+      fd = open(argv[i], O_RDONLY);
+      if (fd == -1) {
+        cout << "wcat: cannot open file" << endl;
+        // this signifies an error
+        return 1;
+      }
+
+      char buffer[4096];
+      // stores the return value of read function
+      int ret;
+
+      while ((ret = read(fd, buffer, 4096)) > 0) {
+        // this prints what was read by read()
+        write(STDOUT_FILENO, buffer, ret);
+      }
+      close(fd);
     }
-  }
-
-  char buffer[4096];
-  int bytesRead = 0;
-  // stores the return value of read function
-  int ret;
-
-  while ((ret = read(fd, buffer, 4096)) > 0) {
-    bytesRead += ret;
-  }
-
-  // this prints what was read by read()
-  write(STDOUT_FILENO, buffer, bytesRead);
-
-  if (argc != 1) {
-    close(fd);
   }
 
   return 0;
