@@ -37,4 +37,10 @@
 
 # End of https://www.toptal.com/developers/gitignore/api/c++
 
+# macOS problem file
 .DS_Store
+
+# Others
+*.jpg
+*.jpeg
+*.png
