@@ -38,12 +38,11 @@ int main(int argc, char *argv[]) {
     bytesRead += ret;
   }
 
-  // this prints what was read by read()
-  write(STDOUT_FILENO, buffer, bytesRead);
-
   if (argc != 1) {
     close(fd);
   }
+
+  cout << "Byte count: " << bytesRead << endl;
 
   return 0;
 }
