@@ -10,6 +10,9 @@
 
 using namespace std;
 
+// Path to directory with all programs
+string path = "/bin/";
+
 vector<string> process_input(string input) {
     vector<string> result;
 
@@ -43,6 +46,10 @@ int built_in_command(vector<string> cmd) {
         return 0;
 
     } else if (cmd[0] == "path") {
+        if (cmd.size() == 1)
+            path = "";
+        else // TODO: handle multiple paths
+            path = cmd[1];
         return 0;
     }
 
@@ -51,9 +58,6 @@ int built_in_command(vector<string> cmd) {
 }
 
 int main(int argc, char *argv[]) {
-    // Path to directory with all programs
-    string path = "/bin/";
-
     // repeat forever
     while (true) {
         cout << "wish> ";
