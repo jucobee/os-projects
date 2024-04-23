@@ -1,3 +1,4 @@
+#include <ios>
 #include <iostream>
 
 #include <fcntl.h>
@@ -10,14 +11,15 @@
 
 using namespace std;
 
-// Path to directory with all programs
-string path = "/bin/";
+/* Global Variables */
+string path = "/bin/"; // Path to directory with all programs
+int fd = -1;           // File descriptor of output
 
 vector<string> process_input(string input) {
     vector<string> result;
 
     // define starting position of string parsing at first occurence of
-    // non-whitespace then define first found position of whitespace after that
+    // non-whitespace, then define first found position of whitespace after that
     size_t start_pos = input.find_first_not_of(" \t");
     size_t found_pos = input.find_first_of(" \t", start_pos);
 
@@ -25,13 +27,44 @@ vector<string> process_input(string input) {
         // extract first argument and append it to result
         string substring =
             input.substr(start_pos, min(found_pos, input.size()) - start_pos);
+
+        // append substring to result
         result.push_back(substring);
+
         // update positions and restart loop
         start_pos = input.find_first_not_of(" \t", found_pos);
         found_pos = input.find_first_of(" \t", start_pos);
     }
 
     return result;
+}
+
+string redirection(string input) {
+    // search for redirection symbo
+    size_t found = input.find(">");
+    string filename;
+
+    if (found != string::npos) {
+        // check for only one output file, and set that as filename
+        vector<string> output = process_input(input.substr(found + 1));
+        if (output.size() > 1) {
+            cerr << "An error has occurred" << endl;
+            return "";
+        } else {
+            filename = output[0];
+        }
+
+        // open file and truncate,
+        // or create new file if file didn't exist before
+        fd = open(filename.c_str(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+        if (fd == -1) {
+            cerr << "Error opening output file" << endl;
+        }
+        // return input string up till ">"
+        return input.substr(0, found);
+
+    } else
+        return input;
 }
 
 int built_in_command(vector<string> cmd) {
@@ -64,13 +97,18 @@ int main(int argc, char *argv[]) {
         string input;
         getline(cin, input); // read input from terminal
 
+        // reset fd, then check for redirection
+        fd = -1;
+        input = redirection(input);
+        if (input == "") // error occurred, restart while loop
+            continue;
+
         // split input into vector of arguments
         vector<string> args = process_input(input);
 
         // attempt to execute built in command and restart while loop if so
-        if (built_in_command(args) == 0) {
+        if (built_in_command(args) == 0)
             continue;
-        }
 
         // make new process for command
         pid_t pid = fork();
@@ -87,9 +125,18 @@ int main(int argc, char *argv[]) {
             }
             argv[args.size()] = NULL;
 
+            // check if redirecting
+            if (fd != -1) {
+                // reroute stdout and stderr to fd
+                dup2(fd, STDOUT_FILENO);
+                dup2(fd, STDERR_FILENO);
+                close(fd);
+            }
+
             // Arguments to be passed to the program
             execv(argv[0], const_cast<char *const *>(argv));
 
+            // execv should not return
             cerr << "An error has occurred" << endl;
             exit(1);
 

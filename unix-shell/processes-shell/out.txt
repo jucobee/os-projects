@@ -1,0 +1,6 @@
+idk.txt
+out.txt
+test-wish.sh
+tests
+wish
+wish.cpp
