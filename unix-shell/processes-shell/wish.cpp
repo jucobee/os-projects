@@ -31,12 +31,23 @@ vector<string> process_input(string input) {
     return result;
 }
 
-int built_in_command(string cmd) {
-    if (cmd == "exit")
+int built_in_command(vector<string> cmd) {
+    if (cmd[0] == "exit")
         exit(0);
 
-    // return 0 back to main if command is not built in
-    return 0;
+    else if (cmd[0] == "cd") {
+        // cd only takes one arg and chdir syscall must return 0
+        if (cmd.size() != 2 || chdir(cmd[1].c_str()) != 0) {
+            cerr << "An error has occured" << endl;
+        }
+        return 0;
+
+    } else if (cmd[0] == "path") {
+        return 0;
+    }
+
+    // return 1 back to main if command is not built in
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -49,18 +60,22 @@ int main(int argc, char *argv[]) {
         string input;
         getline(cin, input); // read input from terminal
 
-        // attempt to execute built in command and restart while loop if so
-        built_in_command(input);
-
         // split input into vector of arguments
         vector<string> args = process_input(input);
+
+        // attempt to execute built in command and restart while loop if so
+        if (built_in_command(args) == 0) {
+            continue;
+        }
 
         // make new process for command
         pid_t pid = fork();
         if (pid == 0) {
             /* Child */
+            // append program to path
             path.append(args[0]);
 
+            // get argv in form that execv wants
             const char *argv[args.size() + 1];
             argv[0] = path.c_str();
             for (int i = 1; i < args.size(); i++) {
